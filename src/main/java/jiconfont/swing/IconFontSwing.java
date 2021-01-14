@@ -286,4 +286,5 @@ public final class IconFontSwing {
         Font font = IconFontSwing.buildFont(iconCode.getFontFamily());
         return font.deriveFont(size);
     }
+
 }
