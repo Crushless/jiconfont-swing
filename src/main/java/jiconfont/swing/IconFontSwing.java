@@ -36,8 +36,10 @@ import java.util.logging.Logger;
  */
 public final class IconFontSwing {
 
-
     private static List<IconFont> fonts = new ArrayList<>();
+
+    private IconFontSwing() {
+    }
 
     /**
      * Register an icon font.
@@ -45,7 +47,7 @@ public final class IconFontSwing {
      * @param iconFont the icon font.
      */
     public static synchronized void register(IconFont iconFont) {
-        if (IconFontSwing.fonts.contains(iconFont) == false) {
+        if (!IconFontSwing.fonts.contains(iconFont)) {
             IconFontSwing.fonts.add(iconFont);
         }
     }
@@ -56,7 +58,7 @@ public final class IconFontSwing {
      * @param fontFamily the font family.
      * @return the font.
      */
-    public static synchronized final Font buildFont(String fontFamily) {
+    public static synchronized Font buildFont(String fontFamily) {
         try {
             for (IconFont iconFont : IconFontSwing.fonts) {
                 if (iconFont.getFontFamily().equals(fontFamily)) {
@@ -64,18 +66,13 @@ public final class IconFontSwing {
                 }
             }
         } catch (Exception ex) {
-            Logger.getLogger(IconFontSwing.class.getName()).log(Level.SEVERE,
-                    "Font load failure", ex);
+            Logger.getLogger(IconFontSwing.class.getName()).log(Level.SEVERE, "Font load failure", ex);
         }
 
-        Logger.getLogger(IconFontSwing.class.getName()).log(Level.SEVERE,
-                "Font not found: " + fontFamily);
+        Logger.getLogger(IconFontSwing.class.getName()).log(Level.SEVERE, "Font not found: {0}", fontFamily);
         throw new IllegalArgumentException("Font not found: " + fontFamily);
     }
 
-
-    private IconFontSwing() {
-    }
 
     /**
      * Builds an image.
@@ -125,6 +122,77 @@ public final class IconFontSwing {
         return new ImageIcon(buildImage(iconCode, size, color));
     }
 
+    /**
+     * Builds an stacked image.
+     *
+     * @param iconCode1 the icon code for the icon on the bottom.
+     * @param iconCode2 the icon code for the icon on the top.
+     * @param size      the size.
+     * @return the image.
+     */
+    public static Image buildStackedImage(IconCode iconCode1, IconCode iconCode2, float size) {
+        return buildStackedImage(iconCode1, iconCode2, size, Color.BLACK);
+    }
+
+    /**
+     * Builds an stacked image.
+     *
+     * @param iconCode1 the icon code for the icon on the bottom.
+     * @param iconCode2 the icon code for the icon on the top.
+     * @param size      the size.
+     * @param color     the size.
+     * @return the image.
+     */
+    public static Image buildStackedImage(IconCode iconCode1, IconCode iconCode2, float size, Color color) {
+        Font font1 = buildFont(iconCode1, size);
+        String text1 = Character.toString(iconCode1.getUnicode());
+        Image image1 = buildImage(text1, font1, color);
+
+        Font font2 = buildFont(iconCode2, size);
+        String text2 = Character.toString(iconCode2.getUnicode());
+        Image image2 = buildImage(text2, font2, color);
+
+        return buildStackedImage(image1, image2);
+    }
+
+    /**
+     * Builds an stacked icon.
+     *
+     * @param iconCode1 the icon code for the icon on the bottom.
+     * @param iconCode2 the icon code for the icon on the top.
+     * @param size      the size.
+     * @return the icon.
+     */
+    public static Icon buildStackedIcon(IconCode iconCode1, IconCode iconCode2, float size) {
+        return buildStackedIcon(iconCode1, iconCode2, size, Color.BLACK);
+    }
+
+    /**
+     * Builds an stacked icon.
+     *
+     * @param iconCode1 the icon code for the icon on the bottom.
+     * @param iconCode2 the icon code for the icon on the top.
+     * @param size      the size.
+     * @param color     the size.
+     * @return the icon.
+     */
+    public static Icon buildStackedIcon(IconCode iconCode1, IconCode iconCode2, float size, Color color) {
+        return new ImageIcon(buildStackedImage(iconCode1, iconCode2, size, color));
+    }
+
+    public static Image buildStackedImage(Image image1, Image image2) {
+        int width = Math.max(image1.getWidth(null), image2.getHeight(null));
+        int height = Math.max(image1.getWidth(null), image2.getHeight(null));
+
+        BufferedImage stacked = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = stacked.createGraphics();
+        g2d.drawImage(image1, 0, 0, null);
+        g2d.drawImage(image2, 0, 0, null);
+        g2d.dispose();
+
+        return stacked;
+    }
+
     private static BufferedImage buildImage(String text, Font font, Color color) {
         JLabel label = new JLabel(text);
         label.setForeground(color);
@@ -151,6 +219,4 @@ public final class IconFontSwing {
         Font font = IconFontSwing.buildFont(iconCode.getFontFamily());
         return font.deriveFont(size);
     }
-
-
 }
