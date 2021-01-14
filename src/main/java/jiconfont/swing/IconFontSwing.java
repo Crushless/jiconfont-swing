@@ -7,6 +7,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +97,22 @@ public final class IconFontSwing {
     public static Image buildImage(IconCode iconCode, float size, Color color) {
         Font font = buildFont(iconCode, size);
         String text = Character.toString(iconCode.getUnicode());
-        return buildImage(text, font, color);
+        return buildImage(text, font, color, 0);
+    }
+
+    /**
+     * Builds an rotated image.
+     *
+     * @param iconCode the icon code.
+     * @param size     the size.
+     * @param color    the size.
+     * @param rotation the rotation in number of 90 degree arcs
+     * @return the rotated image.
+     */
+    public static Image buildImage(IconCode iconCode, float size, Color color, int rotation) {
+        Font font = buildFont(iconCode, size);
+        String text = Character.toString(iconCode.getUnicode());
+        return buildImage(text, font, color, rotation);
     }
 
     /**
@@ -119,7 +135,20 @@ public final class IconFontSwing {
      * @return the icon.
      */
     public static Icon buildIcon(IconCode iconCode, float size, Color color) {
-        return new ImageIcon(buildImage(iconCode, size, color));
+        return buildIcon(iconCode, size, color, 0);
+    }
+
+    /**
+     * Builds an rotated icon.
+     *
+     * @param iconCode the icon code.
+     * @param size     the size.
+     * @param color    the size.
+     * @param rotation the rotation in number of 90 degree arcs
+     * @return the rotated icon.
+     */
+    public static Icon buildIcon(IconCode iconCode, float size, Color color, int rotation) {
+        return new ImageIcon(buildImage(iconCode, size, color, rotation));
     }
 
     /**
@@ -128,7 +157,7 @@ public final class IconFontSwing {
      * @param iconCode1 the icon code for the icon on the bottom.
      * @param iconCode2 the icon code for the icon on the top.
      * @param size      the size.
-     * @return the image.
+     * @return the stacked image.
      */
     public static Image buildStackedImage(IconCode iconCode1, IconCode iconCode2, float size) {
         return buildStackedImage(iconCode1, iconCode2, size, Color.BLACK);
@@ -141,18 +170,32 @@ public final class IconFontSwing {
      * @param iconCode2 the icon code for the icon on the top.
      * @param size      the size.
      * @param color     the size.
-     * @return the image.
+     * @return the stacked image.
      */
     public static Image buildStackedImage(IconCode iconCode1, IconCode iconCode2, float size, Color color) {
+        return buildStackedImage(iconCode1, iconCode2, size, color, 0);
+    }
+
+    /**
+     * Builds an rotated stacked image.
+     *
+     * @param iconCode1 the icon code for the icon on the bottom.
+     * @param iconCode2 the icon code for the icon on the top.
+     * @param size      the size.
+     * @param color     the size.
+     * @param rotation  the rotation in number of 90 degree arcs
+     * @return the rotated stacked image.
+     */
+    public static Image buildStackedImage(IconCode iconCode1, IconCode iconCode2, float size, Color color, int rotation) {
         Font font1 = buildFont(iconCode1, size);
         String text1 = Character.toString(iconCode1.getUnicode());
-        Image image1 = buildImage(text1, font1, color);
+        Image image1 = buildImage(text1, font1, color, 0);
 
         Font font2 = buildFont(iconCode2, size);
         String text2 = Character.toString(iconCode2.getUnicode());
-        Image image2 = buildImage(text2, font2, color);
+        Image image2 = buildImage(text2, font2, color, 0);
 
-        return buildStackedImage(image1, image2);
+        return buildStackedImage(image1, image2, rotation);
     }
 
     /**
@@ -161,7 +204,7 @@ public final class IconFontSwing {
      * @param iconCode1 the icon code for the icon on the bottom.
      * @param iconCode2 the icon code for the icon on the top.
      * @param size      the size.
-     * @return the icon.
+     * @return the stacked icon.
      */
     public static Icon buildStackedIcon(IconCode iconCode1, IconCode iconCode2, float size) {
         return buildStackedIcon(iconCode1, iconCode2, size, Color.BLACK);
@@ -174,18 +217,38 @@ public final class IconFontSwing {
      * @param iconCode2 the icon code for the icon on the top.
      * @param size      the size.
      * @param color     the size.
-     * @return the icon.
+     * @return the stacked icon.
      */
     public static Icon buildStackedIcon(IconCode iconCode1, IconCode iconCode2, float size, Color color) {
         return new ImageIcon(buildStackedImage(iconCode1, iconCode2, size, color));
     }
 
     public static Image buildStackedImage(Image image1, Image image2) {
+        return buildStackedImage(image1, image2, 0);
+    }
+
+
+    /**
+     * Builds an rotated stacked image.
+     *
+     * @param image1    the image on the bottom.
+     * @param image2    the image on the top.
+     * @param rotation  the rotation in number of 90 degree arcs
+     * @return the rotated stacked image.
+     */
+    public static Image buildStackedImage(Image image1, Image image2, int rotation) {
         int width = Math.max(image1.getWidth(null), image2.getHeight(null));
         int height = Math.max(image1.getWidth(null), image2.getHeight(null));
 
         BufferedImage stacked = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = stacked.createGraphics();
+
+        if(rotation != 0) {
+            AffineTransform transform = new AffineTransform();
+            transform.quadrantRotate(rotation, width / 2D, height / 2D);
+            g2d.transform(transform);
+        }
+
         g2d.drawImage(image1, 0, 0, null);
         g2d.drawImage(image2, 0, 0, null);
         g2d.dispose();
@@ -193,23 +256,27 @@ public final class IconFontSwing {
         return stacked;
     }
 
-    private static BufferedImage buildImage(String text, Font font, Color color) {
+    private static BufferedImage buildImage(String text, Font font, Color color, int rotation) {
         JLabel label = new JLabel(text);
         label.setForeground(color);
         label.setFont(font);
+
         Dimension dim = label.getPreferredSize();
         int width = dim.width + 1;
         int height = dim.height + 1;
         label.setSize(width, height);
-        BufferedImage bufImage =
-                new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        BufferedImage bufImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = bufImage.createGraphics();
-        g2d.setRenderingHint(
-                RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2d.setRenderingHint(
-                RenderingHints.KEY_FRACTIONALMETRICS,
-                RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+        if(rotation != 0) {
+            AffineTransform transform = new AffineTransform();
+            transform.quadrantRotate(rotation, width / 2D, height / 2D);
+            g2d.transform(transform);
+        }
+
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         label.print(g2d);
         g2d.dispose();
         return bufImage;
